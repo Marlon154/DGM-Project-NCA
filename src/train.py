@@ -1,7 +1,8 @@
 from torchvision.transforms.v2.functional import pad_image
 from tqdm import tqdm
 
-
+import numpy as np
+import torch
 from nca import NCA
 from utils import *
 
@@ -11,6 +12,14 @@ def get_seed(param, param1):
 
 
 def loss_fun(target_batch, cell_states):
+    pass
+
+
+def load_image(param, param1):
+    pass
+
+
+def make_circle_masks(diameter):
     pass
 
 
