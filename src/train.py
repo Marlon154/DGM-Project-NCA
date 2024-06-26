@@ -5,7 +5,7 @@ from tqdm import tqdm
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
-
+import wandb
 from nca import NCA, to_rgb, to_rgba
 
 
@@ -48,6 +48,8 @@ def make_circle_masks(diameter):
 
 
 def main(config):
+    wandb.init(project="dgm-nca", config=config)
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     target = load_image(config["target_path"], config["img_size"])
@@ -55,7 +57,7 @@ def main(config):
     target = target.to(device)
     target_batch = target.repeat(config["batch_size"], 1, 1, 1)
 
-    model = NCA(n_channels=config["n_channels"], device=device)
+    model = NCA(n_channels=config["n_channels"]).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=config["learning_rate"])
 
     seed = get_seed(config["img_size"] + 2 * config["padding"], config["n_channels"])
@@ -96,28 +98,35 @@ def main(config):
                 damage = 1.0 - make_circle_masks(config["img_size"] + 2 * config["padding"]).to(device)
                 pool[best_pool_indices[n]] *= damage
 
+        wandb.log({
+            "loss": loss.item(),
+            "iteration": iteration,
+        })
+        if iteration % 100 == 0:  # todo
+            wandb.log({
+                "target_image": wandb.Image(to_rgb(target[0].permute(1, 2, 0)).detach().cpu().numpy()),
+                "generated_image": wandb.Image(to_rgb(cell_states[0].permute(1, 2, 0)).detach().cpu().numpy()),
+            })
+
+    wandb.save(config["model_path"])
+    wandb.finish()
     torch.save(model.state_dict(), config["model_path"])
 
     return loss_values
 
 
 if __name__ == "__main__":
-    def load_emoji(emoji):
-        code = hex(ord(emoji))[2:].lower()
-        url = 'https://github.com/googlefonts/noto-emoji/blob/main/png/128/emoji_u%s.png?raw=true' % code
-        return load_image(url)
-
     config = {
-        "target_path": "./data/demo/demo-image-pneumonia-32.png",
+        "target_path": "./data/pneumonia/image-pneumonia-16.png",
         "img_size": 128,
         "padding": 16,
         "n_channels": 16,
         "batch_size": 4,
         "pool_size": 256,
         "learning_rate": 1e-3,
-        "iterations": 5000,
+        "iterations": 1000,
         "damage": False,
-        "model_path": "models/nca.pth",
+        "model_path": "./model/nca.pth",
     }
     loss_history = main(config)
 

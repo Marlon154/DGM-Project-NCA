@@ -1,16 +1,14 @@
 import torch
 import torch.nn as nn
 
-
 dtype = torch.float32
 
 
 class NCA(nn.Module):
-    def __init__(self, n_channels=16, num_h_channels=128, fire_rate=0.5, act_fun=nn.ReLU, device="cpu"):
+    def __init__(self, n_channels=16, num_h_channels=128, fire_rate=0.5, act_fun=nn.ReLU):
         super(NCA, self).__init__()
         self.fire_rate = fire_rate
         self.n_channels = n_channels
-        self.device = device
         tmp_f = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]) / 8
         filter_x = tmp_f
         filter_y = tmp_f.t()
@@ -18,7 +16,7 @@ class NCA(nn.Module):
         identity = torch.outer(identity, identity)
         kernel = torch.stack([identity, filter_x, filter_y], dim=0)
         kernel = kernel.repeat((n_channels, 1, 1))[:, None, ...]
-        self.kernel = kernel.to(self.device)
+        self.kernel = kernel
         self.conv = nn.Sequential(
             nn.Conv2d(3 * n_channels, num_h_channels, kernel_size=1),
             act_fun(),
@@ -28,7 +26,7 @@ class NCA(nn.Module):
         with torch.no_grad():
             self.conv[2].weight.zero_()
 
-        self.to(self.device, dtype=dtype)
+        self.to(dtype=dtype)
 
     def perceive(self, x):
         return nn.functional.conv2d(x, self.kernel, padding=1, groups=self.n_channels)
