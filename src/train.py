@@ -4,7 +4,6 @@ from tqdm import tqdm
 import numpy as np
 import torch
 from nca import NCA
-from utils import *
 
 
 def get_seed(param, param1):
@@ -42,9 +41,7 @@ def main(config):
     loss_values = []
 
     for iteration in tqdm(range(config["iterations"])):
-        batch_indices = np.random.choice(
-            config["pool_size"], config["batch_size"], replace=False
-        ).tolist()
+        batch_indices = np.random.choice(config["pool_size"], config["batch_size"], replace=False).tolist()
 
         cell_states = pool[batch_indices]
 
