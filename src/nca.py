@@ -34,13 +34,13 @@ class NCA(nn.Module):
         return nn.functional.conv2d(x, self.kernel, padding=1, groups=self.n_channels)
 
     def forward(self, x):
-        pre_life_mask = self.get_living_cells(x)
+        pre_life_mask = get_living_cells(x)
         y = self.perceive(x)
         dx = self.conv(y)
         mask = (torch.rand(x[:, :1, :, :].shape) <= self.fire_rate).to(self.device, dtype)
         dx *= mask
         updated_x = x + dx
-        post_life_mask = self.get_living_cells(updated_x)
+        post_life_mask = get_living_cells(updated_x)
         life_mask = (pre_life_mask & post_life_mask).to(dtype)
         return updated_x * life_mask
 
