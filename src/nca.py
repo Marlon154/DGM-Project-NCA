@@ -14,13 +14,13 @@ class NCA(nn.Module):
         identity = torch.tensor([0, 1, 0], device=device, dtype=torch.float32)
         identity = torch.outer(identity, identity)
         kernel = torch.stack([identity, filter_x, filter_y], dim=0)
-        kernel = kernel.repeat((n_channels, 1, 1))[:, None, ...]
-        self.register_buffer('kernel', kernel)
+        kernel = kernel.repeat((n_channels, 1, 1))[:, None, ...].to(device)
+        self.kernel = kernel
         self.conv = nn.Sequential(
             nn.Conv2d(3 * n_channels, num_h_channels, kernel_size=1),
             act_fun(),
-            nn.Conv2d(num_h_channels, n_channels, kernel_size=1, bias=False),
-        )
+            nn.Conv2d(num_h_channels, n_channels, 1, bias=False)
+        ).to(device)
 
         with torch.no_grad():
             self.conv[2].weight.zero_()
@@ -31,15 +31,12 @@ class NCA(nn.Module):
         return nn.functional.conv2d(x, self.kernel, padding=1, groups=self.n_channels)
 
     def forward(self, x):
-        pre_life_mask = get_living_cells(x)
-        y = self.perceive(x)
-        dx = self.conv(y)
-        mask = (torch.rand(x[:, :1, :, :].shape, device=self.device) <= self.fire_rate)
-        dx *= mask
-        updated_x = x + dx
-        post_life_mask = get_living_cells(updated_x)
-        life_mask = pre_life_mask & post_life_mask
-        return updated_x * life_mask
+        begin_living_cells = get_living_cells(x)
+        dx = self.conv(self.perceive(x))
+        update = (torch.rand(x[:, :1, :, :].shape, device=self.device) <= self.fire_rate)
+        x = x + dx * update
+
+        return x * (begin_living_cells & get_living_cells(x))
 
 
 def get_living_cells(x):

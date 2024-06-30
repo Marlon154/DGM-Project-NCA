@@ -1,10 +1,9 @@
 import torch
-import torch.nn as nn
+from torch import nn
 from torchvision.transforms.functional import pad
 from tqdm import tqdm
 import numpy as np
 from PIL import Image
-import matplotlib.pyplot as plt
 import wandb
 from nca import NCA, to_rgb, to_rgba
 
@@ -103,20 +102,18 @@ def main(config):
     wandb.finish()
     torch.save(model.state_dict(), config["model_path"])
 
-    return loss_values
-
 
 if __name__ == "__main__":
     config = {
         "target_path": "./data/pneumonia/image-pneumonia-32.png",
-        "img_size": 128,
+        "img_size": 32,
         "padding": 16,
         "n_channels": 16,
-        "batch_size": 4,
-        "pool_size": 256,
+        "batch_size": 8,
+        "pool_size": 1024,
         "learning_rate": 1e-3,
         "iterations": 1000,
         "damage": False,
-        "model_path": "./model/nca.pth",
+        "model_path": "nca.pth",
     }
-    loss_history = main(config)
+    main(config)
