@@ -39,6 +39,12 @@ class NCA(nn.Module):
         return x * (begin_living_cells & get_living_cells(x))
 
 
+def get_seed(img_size, n_channels, device):
+    seed = torch.zeros((1, n_channels, img_size, img_size), dtype=torch.float32, device=device)
+    seed[:, 3:, img_size // 2, img_size // 2] = 1.0
+    return seed
+
+
 def get_living_cells(x):
     return nn.functional.max_pool2d(x[:, 3:4, :, :], kernel_size=3, stride=1, padding=1) > 0.1
 

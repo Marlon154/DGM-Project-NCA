@@ -5,13 +5,22 @@ from tqdm import tqdm
 import numpy as np
 from PIL import Image
 import wandb
-from nca import NCA, to_rgb, to_rgba
+from nca import NCA, to_rgb, to_rgba, get_seed
 
 
-def get_seed(img_size, n_channels, device):
-    seed = torch.zeros((1, n_channels, img_size, img_size), dtype=torch.float32, device=device)
-    seed[:, 3:4, img_size // 2, img_size // 2] = 1.0
-    return seed
+def load_image(path, size, device):
+    img = Image.open(path).convert('RGBA').resize((size, size))
+    return torch.tensor(np.array(img) / 255.0, dtype=torch.float32, device=device).permute(2, 0, 1).unsqueeze(0)
+
+
+def make_circle_masks(diameter, n_channels, device):
+    x = torch.linspace(-1, 1, diameter, device=device)
+    y = torch.linspace(-1, 1, diameter, device=device)
+    xx, yy = torch.meshgrid(x, y, indexing='ij')
+    center = torch.rand(2, device=device) * 0.4 + 0.3
+    r = torch.rand(1, device=device) * 0.2 + 0.2
+    mask = ((xx - center[0]) ** 2 + (yy - center[1]) ** 2 < r ** 2).float()
+    return mask.unsqueeze(0).repeat(n_channels, 1, 1)
 
 
 def loss_fun(target_batch, cell_states):
@@ -24,96 +33,81 @@ def loss_fun(target_batch, cell_states):
     return loss_batch, loss_batch.mean()
 
 
-def load_image(path, size, device):
-    img = Image.open(path).convert('RGBA').resize((size, size))
-    return torch.tensor(np.array(img) / 255.0, dtype=torch.float32, device=device).permute(2, 0, 1).unsqueeze(0)
-
-
-def make_circle_masks(diameter, device):
-    x = torch.linspace(-1, 1, diameter, device=device)
-    y = torch.linspace(-1, 1, diameter, device=device)
-    xx, yy = torch.meshgrid(x, y, indexing='ij')
-    center = torch.rand(2, device=device) * 0.4 + 0.3
-    r = torch.rand(1, device=device) * 0.2 + 0.2
-    mask = ((xx - center[0]) ** 2 + (yy - center[1]) ** 2 < r ** 2).float()
-    return mask.unsqueeze(0).unsqueeze(0)
-
-
 def main(config):
     wandb.init(project="dgm-nca", config=config)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    seed = get_seed(config["img_size"], config["n_channels"], device)
+    pool = seed.expand(config["pool_size"], -1, -1, -1).clone()
+
     target = load_image(config["target_path"], config["img_size"], device)
     target = pad(target, config["padding"])
-    target_batch = target.repeat(config["batch_size"], 1, 1, 1)
+    batched_target = target.repeat(config["batch_size"], 1, 1, 1)
 
     model = NCA(n_channels=config["n_channels"], device=device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=config["learning_rate"])
+    optimizer = torch.optim.AdamW(model.parameters(), lr=config["learning_rate"])
 
-    seed = get_seed(config["img_size"] + 2 * config["padding"], config["n_channels"], device)
-    pool = seed.clone().repeat(config["pool_size"], 1, 1, 1)
-
-    loss_values = []
 
     for iteration in tqdm(range(config["iterations"])):
         batch_indices = torch.randperm(config["pool_size"], device=device)[:config["batch_size"]]
 
-        cell_states = pool[batch_indices]
+        x = pool[batch_indices]
 
-        for _ in range(torch.randint(64, 96, (1,)).item()):
-            cell_states = model(cell_states)
+        steps = torch.randint(config["min_steps"], config["max_steps"], (1,)).item()
+        for _ in range(steps):
+            x = model.forward(x)
 
-        loss_batch, loss = loss_fun(target_batch, cell_states)
-
-        loss_values.append(loss.item())
+        loss_batch = ((batched_target - x[:, :4, ...])**2).mean(dim=[1, 2, 3])
+        loss = loss_batch.mean()
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        max_loss_index = loss_batch.argmax().item()
-        pool_index = batch_indices[max_loss_index]
-        remaining_indices = torch.tensor([i for i in range(config["batch_size"]) if i != max_loss_index], device=device)
-        pool_remaining_indices = batch_indices[batch_indices != pool_index]
+        # Gradient clipping to prevent exploding gradients
+        torch.nn.utils.clip_grad_norm_(model.parameters(), config["clip_value"])
 
-        pool[pool_index] = seed.clone()
-        pool[pool_remaining_indices] = cell_states[remaining_indices].detach()
+        with torch.no_grad():
+            # Update pool
+            pool[batch_indices] = x.detach()
 
-        if config["damage"]:
-            best_loss_indices = torch.argsort(loss_batch)[:3]
-            best_pool_indices = batch_indices[best_loss_indices]
+            # Replace the highest loss sample with seed
+            max_loss_idx = loss_batch.argmax()
+            pool[batch_indices[max_loss_idx]] = seed
 
-            for n in range(3):
-                damage = 1.0 - make_circle_masks(config["img_size"] + 2 * config["padding"], device)
-                pool[best_pool_indices[n]] *= damage
+            if config["damage"] and iteration > config["damage_start"]:
+                # Apply damage to the best samples
+                best_indices = loss_batch.argsort()[:3]
+                for idx in best_indices:
+                    damage_mask = 1.0 - make_circle_masks(config["img_size"] + 2 * config["padding"],
+                                                          config["n_channels"], device)
+                    pool[batch_indices[idx]] *= damage_mask
 
         wandb.log({
             "loss": loss.item(),
             "iteration": iteration,
         })
-        if iteration % 100 == 0:
-            wandb.log({
-                "target_image": wandb.Image(to_rgb(target[0].permute(1, 2, 0)).cpu().numpy()),
-                "generated_image": wandb.Image(to_rgb(cell_states[0].permute(1, 2, 0)).detach().cpu().numpy()),
-            })
 
-    wandb.save(config["model_path"])
     wandb.finish()
     torch.save(model.state_dict(), config["model_path"])
 
 
 if __name__ == "__main__":
     config = {
-        "target_path": "./data/pneumonia/image-pneumonia-32.png",
-        "img_size": 32,
-        "padding": 16,
+        "target_path": "./data/blood/blood-28.png",
+        "img_size": 28,
+        "padding": 0,
+        "min_steps": 64,
+        "max_steps": 96,
         "n_channels": 16,
         "batch_size": 8,
         "pool_size": 1024,
-        "learning_rate": 1e-3,
-        "iterations": 1000,
-        "damage": False,
-        "model_path": "nca.pth",
+        "learning_rate": 0.001,
+        "iterations": 2000,
+        "damage": True,
+        "damage_start": 500,
+        "clip_value": 1.0,
+        "model_path": "./models/nca_model.pth",
     }
     main(config)
