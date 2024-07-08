@@ -3,32 +3,30 @@ import torch.nn as nn
 
 
 class NCA(nn.Module):
-    def __init__(self, n_channels=16, num_h_channels=128, fire_rate=0.5, act_fun=nn.ReLU, device="cuda"):
+    def __init__(self, n_channels=16, num_h_channels=128, fire_rate=0.5, act_fun=nn.ReLU, device="cuda", filter_name="identity"):
         super(NCA, self).__init__()
         self.fire_rate = fire_rate
         self.n_channels = n_channels
         self.device = device
-        tmp_f = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], device=device, dtype=torch.float32) / 8
-        filter_x = tmp_f
-        filter_y = tmp_f.t()
-        identity = torch.tensor([0, 1, 0], device=device, dtype=torch.float32)
-        identity = torch.outer(identity, identity)
-        kernel = torch.stack([identity, filter_x, filter_y], dim=0)
-        kernel = kernel.repeat((n_channels, 1, 1))[:, None, ...].to(device)
-        self.kernel = kernel
+        
+        self.filter = get_filter(filter_name, n_channels).to(device)
+        
+        # Adjust the input channels of the conv layer based on the filter output
+        filter_output_channels = self.filter(torch.zeros(1, n_channels, 3, 3, device=device)).shape[1]
+        
         self.conv = nn.Sequential(
-            nn.Conv2d(3 * n_channels, num_h_channels, kernel_size=1),
+            nn.Conv2d(filter_output_channels, num_h_channels, kernel_size=1),
             act_fun(),
             nn.Conv2d(num_h_channels, n_channels, 1, bias=False)
         ).to(device)
 
         with torch.no_grad():
             self.conv[2].weight.zero_()
-
+        
         self.to(device)
 
     def perceive(self, x):
-        return nn.functional.conv2d(x, self.kernel, padding=1, groups=self.n_channels)
+        return self.filter(x)
 
     def forward(self, x):
         begin_living_cells = get_living_cells(x)
