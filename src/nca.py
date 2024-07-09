@@ -30,7 +30,8 @@ class NCA(nn.Module):
 
     def forward(self, x):
         begin_living_cells = get_living_cells(x)
-        dx = self.conv(self.perceive(x))
+        perceived = self.perceive(x)
+        dx = self.conv(perceived)
         update = (torch.rand(x[:, :1, :, :].shape, device=self.device) <= self.fire_rate)
         x = x + dx * update
         return x * (begin_living_cells & get_living_cells(x))

@@ -42,7 +42,10 @@ def gaussian_filter(n_channels, device, sigma=1.0):
     return kernel
 
 def apply_filter(x, kernel):
-    if kernel.size(1) == 2:  # Sobel filter case
-        return F.conv2d(x, kernel, padding=1, groups=x.shape[1])
+    if kernel.size(0) == x.size(1) and kernel.size(1) == 2:  # Sobel filter case
+        # Apply horizontal and vertical Sobel filters
+        gx = F.conv2d(x, kernel[:, 0:1, :, :], padding=1, groups=x.size(1))
+        gy = F.conv2d(x, kernel[:, 1:2, :, :], padding=1, groups=x.size(1))
+        return torch.cat([gx, gy], dim=1)
     else:
         return F.conv2d(x, kernel, padding=1, groups=x.shape[1])
