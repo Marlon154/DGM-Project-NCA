@@ -27,11 +27,14 @@ def make_circle_masks(diameter, n_channels, device):
 def main(config):
     wandb.init(project="dgm-nca", config=config)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
     seed = get_seed(config["img_size"], config["n_channels"], device)
     pool = seed.expand(config["pool_size"], -1, -1, -1).clone()
+    
     target = load_image(config["target_path"], config["img_size"], device)
     target = pad(target, config["padding"])
     batched_target = target.repeat(config["batch_size"], 1, 1, 1)
+    
     model = NCA(n_channels=config["n_channels"], device=device, filter_name=config["filter_name"])
     optimizer = torch.optim.AdamW(model.parameters(), lr=config["learning_rate"])
     
@@ -81,7 +84,13 @@ def main(config):
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description="Train")
-    parser.add_argument("-c", "--config", type=str, default="config.yaml", help="Path to config.")
+    parser.add_argument("-c", "--config", type=str, default="src/config.yaml", help="Path to config.")
     args = parser.parse_args()
     config = yaml.safe_load(open(args.config, "r"))
+    
+    # Print the config hyperparameters
+    print("Hyperparameters:")
+    for key, value in config.items():
+        print(f"{key}: {value}")
+    
     main(config)

@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+from filters import get_filter, apply_filter
 
 class NCA(nn.Module):
     def __init__(self, n_channels=16, num_h_channels=128, fire_rate=0.5, act_fun=nn.ReLU, device="cuda", filter_name="identity"):
@@ -8,34 +8,32 @@ class NCA(nn.Module):
         self.fire_rate = fire_rate
         self.n_channels = n_channels
         self.device = device
+        self.filter_name = filter_name
         
-        self.filter = get_filter(filter_name, n_channels).to(device)
+        self.kernel = get_filter(filter_name, n_channels, device)
         
-        # Adjust the input channels of the conv layer based on the filter output
-        filter_output_channels = self.filter(torch.zeros(1, n_channels, 3, 3, device=device)).shape[1]
+        input_channels = 2 * n_channels if filter_name == "sobel" else n_channels
         
         self.conv = nn.Sequential(
-            nn.Conv2d(filter_output_channels, num_h_channels, kernel_size=1),
+            nn.Conv2d(input_channels, num_h_channels, kernel_size=1),
             act_fun(),
             nn.Conv2d(num_h_channels, n_channels, 1, bias=False)
         ).to(device)
-
+        
         with torch.no_grad():
             self.conv[2].weight.zero_()
         
         self.to(device)
 
     def perceive(self, x):
-        return self.filter(x)
+        return apply_filter(x, self.kernel)
 
     def forward(self, x):
         begin_living_cells = get_living_cells(x)
         dx = self.conv(self.perceive(x))
         update = (torch.rand(x[:, :1, :, :].shape, device=self.device) <= self.fire_rate)
         x = x + dx * update
-
         return x * (begin_living_cells & get_living_cells(x))
-
 
 def get_seed(img_size, n_channels, device):
     seed = torch.zeros((1, n_channels, img_size, img_size), dtype=torch.float32, device=device)

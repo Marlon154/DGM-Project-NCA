@@ -7,10 +7,10 @@ n_channels: 16
 batch_size: 8
 pool_size: 1024
 learning_rate: 0.001
-iterations: 2000
+iterations: 100
 damage: True
 damage_start: 500
 clip_value: 1.0
 model_path: ./models/nca_model.pth
-loss_function: mse
-filter_name: sobel
+loss_function: mse # Options: "mse", "manhattan", "hinge", "ms_ssim", "combined_ssim_l1"
+filter_name: sobel  # Options: "identity", "sobel", "laplacian", "gaussian"
