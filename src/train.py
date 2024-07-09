@@ -2,6 +2,8 @@ import torch
 from torch import nn
 from torchvision.transforms.functional import pad
 from tqdm import tqdm
+import yaml
+import argparse
 import numpy as np
 from PIL import Image
 import wandb
@@ -77,22 +79,9 @@ def main(config):
     torch.save(model.state_dict(), config["model_path"])
 
 if __name__ == "__main__":
-    config = {
-        "target_path": "./data/blood/blood-28.png",
-        "img_size": 28,
-        "padding": 0,
-        "min_steps": 64,
-        "max_steps": 96,
-        "n_channels": 16,
-        "batch_size": 8,
-        "pool_size": 1024,
-        "learning_rate": 0.001,
-        "iterations": 2000,
-        "damage": True,
-        "damage_start": 500,
-        "clip_value": 1.0,
-        "model_path": "./models/nca_model.pth",
-        "loss_function": "mse",
-        "filter_name": "combined",
-    }
+    
+    parser = argparse.ArgumentParser(description="Train")
+    parser.add_argument("-c", "--config", type=str, default="config.yaml", help="Path to config.")
+    args = parser.parse_args()
+    config = yaml.safe_load(open(args.config, "r"))
     main(config)

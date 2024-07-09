@@ -73,21 +73,7 @@ class GaborFilterBank(nn.Module):
         gabor_responses = [F.conv2d(x, gabor_filter, padding=gabor_filter.size(-1)//2, groups=self.n_channels)
                            for gabor_filter in self.gabor_filters]
         return torch.cat(gabor_responses, dim=1)
-
-class CombinedFilter(nn.Module):
-    def __init__(self, n_channels):
-        super(CombinedFilter, self).__init__()
-        self.identity = IdentityFilter(n_channels)
-        self.sobel = SobelEdgeFilter(n_channels)
-        self.laplacian = LaplacianFilter(n_channels)
-        self.gabor = GaborFilterBank(n_channels)
-
-    def forward(self, x):
-        identity = self.identity(x)
-        edge = self.sobel(x)
-        laplacian = self.laplacian(x)
-        gabor = self.gabor(x)
-        return torch.cat([identity, edge, laplacian, gabor], dim=1)
+    
 
 def get_filter(filter_name, n_channels):
     filters = {
@@ -95,7 +81,6 @@ def get_filter(filter_name, n_channels):
         "sobel": SobelEdgeFilter,
         "laplacian": LaplacianFilter,
         "gabor": GaborFilterBank,
-        "combined": CombinedFilter
     }
     
     if filter_name not in filters:
