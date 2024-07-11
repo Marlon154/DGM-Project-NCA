@@ -1,3 +1,5 @@
+import os.path
+from datetime import datetime
 import torch
 from torch import nn
 from torchvision.transforms.functional import pad
@@ -24,10 +26,21 @@ def make_circle_masks(diameter, n_channels, device):
     mask = ((xx - center[0]) ** 2 + (yy - center[1]) ** 2 < r ** 2).float()
     return mask.unsqueeze(0).repeat(n_channels, 1, 1)
 
-def main(config):
+def main(config=None):
+
     wandb.init(project="dgm-nca", config=config)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
+    config=wandb.config
+
+    assert config["min_steps"] < config["max_steps"]
+
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
+    elif torch.backends.mps.is_available():
+        device = torch.device('mps')
+    else:
+        device = torch.device('cpu')
+
+    print(f"Device: {device}")
     seed = get_seed(config["img_size"], config["n_channels"], device)
     pool = seed.expand(config["pool_size"], -1, -1, -1).clone()
     
@@ -35,7 +48,7 @@ def main(config):
     target = pad(target, config["padding"])
     batched_target = target.repeat(config["batch_size"], 1, 1, 1)
     
-    model = NCA(n_channels=config["n_channels"], device=device, filter_name=config["filter_name"])
+    model = NCA(n_channels=config["n_channels"], num_h_channels=config["num_h_channels"], fire_rate=config["fire_rate"], device=device, filter_name=config["filter_name"])
     optimizer = torch.optim.AdamW(model.parameters(), lr=config["learning_rate"])
     
     # Get the loss function from the config
@@ -79,12 +92,13 @@ def main(config):
         })
     
     wandb.finish()
-    torch.save(model.state_dict(), config["model_path"])
+
+    torch.save(model.state_dict(), f"{config['model_path'].strip('.pth')}_{datetime.today().strftime('%Y-%m-%d-%H-%M')}.pth")
+
 
 if __name__ == "__main__":
-    
     parser = argparse.ArgumentParser(description="Train")
-    parser.add_argument("-c", "--config", type=str, default="src/config.yaml", help="Path to config.")
+    parser.add_argument("-c", "--config", type=str, default="../conf/config.yaml", help="Path to config.")
     args = parser.parse_args()
     config = yaml.safe_load(open(args.config, "r"))
     
