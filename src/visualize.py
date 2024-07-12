@@ -22,7 +22,7 @@ def visualize_nca(model_path, config, n_steps, animation_path, interval=50):
 
     # Initialize the seed
     img_size = config["img_size"]
-    seed = get_seed(img_size + 2 * config["padding"], config["n_channels"], device)
+    seed = get_seed(img_size + 2 * config["padding"], model.n_channels, device)
 
     # Create the figure and axis for the animation
     fig, ax = plt.subplots(figsize=(8, 8))  # Set figure size to be square
@@ -47,7 +47,9 @@ def visualize_nca(model_path, config, n_steps, animation_path, interval=50):
             update.step_text.remove()
 
         # Add the current step number text
-        update.step_text = ax.text(0.01, 0.99, f'Step: {frame}',
+        text_content = f'Step: {frame}\nFilter: {model.filter_name}'
+
+        update.step_text = ax.text(0.01, 0.99, text_content,
                                    transform=ax.transAxes, color='black',
                                    verticalalignment='top', fontsize=20)
 
