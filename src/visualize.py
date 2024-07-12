@@ -1,27 +1,34 @@
+import argparse
+
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+import yaml
 from matplotlib.animation import FuncAnimation
 from nca import NCA, to_rgb, get_seed
 
 
-def visualize_nca(model_path, img_size, padding, n_channels, n_steps, interval=50):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+def visualize_nca(model_path, config, n_steps, animation_path, interval=50):
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
+    #elif torch.backends.mps.is_available():
+        #device = torch.device('mps')
+    else:
+        device = torch.device('cpu')
     # Load the trained model
-    model = NCA(n_channels=n_channels, device=device)
+    model = NCA(n_channels=config["n_channels"],num_h_channels=config["num_h_channels"],fire_rate=config["fire_rate"], filter_name=config["filter_name"], device=device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
     # Initialize the seed
-    seed = get_seed(img_size + 2 * padding, n_channels, device)
+    seed = get_seed(config["img_size"] + 2 * config["padding"], config["n_channels"], device)
 
     # Create the figure and axis for the animation
     fig, ax = plt.subplots(figsize=(8, 8))  # Set figure size to be square
     ax.axis('off')
 
     # Initialize an empty image
-    img = ax.imshow(np.zeros((img_size + 2 * padding, img_size + 2 * padding, 3)))
+    img = ax.imshow(np.zeros((config["img_size"] + 2 * config["padding"], config["img_size"] + 2 * config["padding"], 3)))
 
     def update(frame):
         nonlocal seed
@@ -48,17 +55,26 @@ def visualize_nca(model_path, img_size, padding, n_channels, n_steps, interval=5
     anim = FuncAnimation(fig, update, frames=n_steps, interval=interval, blit=True)
 
     # Save the animation as a gif
-    anim.save('nca_growth.gif', writer='pillow', dpi=100)
+
+    anim.save(animation_path, writer='pillow', dpi=100)
 
     plt.close(fig)
-    print("Animation saved as 'nca_growth.gif'")
+    print(f"Animation saved as '{animation_path}'")
 
 
 if __name__ == "__main__":
-    model_path = "./models/nca_model.pth"
-    img_size = 28
-    padding = 0
-    n_channels = 16
-    n_steps = 200
+    parser = argparse.ArgumentParser(description="Hyperparameter Sweep")
 
-    visualize_nca(model_path, img_size, padding, n_channels, n_steps)
+    model_path = "models/nca_model-28.pth"
+    config_path = "conf/config.yaml"
+    animation_path = "figures/nca_model.gif"
+
+    parser.add_argument("-c", "--config_path", default=config_path, help="Path to config file")
+    parser.add_argument("-m", "--model_path", default=model_path, help="Path to model file")
+    parser.add_argument("-n", "--n_steps", type=int, default=200, help="Number of steps")
+    parser.add_argument("-i", "--interval", type=int, default=50, help="Interval")
+    parser.add_argument("-p", "--animation_path", type=str, default=animation_path, help="Path to save animation")
+    args = parser.parse_args()
+
+    config = yaml.safe_load(open(args.config_path, "r"))
+    visualize_nca(args.model_path, config, args.n_steps, args.animation_path,args.interval)
