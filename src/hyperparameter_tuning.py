@@ -42,7 +42,7 @@ def hyperparameter_tuning_all_filter_loss_combs(config, run_count, user_name, pa
             hyperparameter_tuning(config,run_count,user_name,path, project_name)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Train")
+    parser = argparse.ArgumentParser(description="Hyperparameter Sweep")
     parser.add_argument("-c", "--config", type=str, default="conf/sweep_config.yaml", help="Path to sweep config.")
     parser.add_argument("-r", "--run_count", type=int, default=30, help="Determines how many times the sweep agent runs the train function")
     parser.add_argument("-u", "--user_name", type=str, default="mayma-lab", help="Weights and Biases username to retrieve best config")

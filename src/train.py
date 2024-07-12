@@ -98,7 +98,7 @@ def main(config=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train")
-    parser.add_argument("-c", "--config", type=str, default="../conf/config.yaml", help="Path to config.")
+    parser.add_argument("-c", "--config", type=str, default="conf/config.yaml", help="Path to config.")
     args = parser.parse_args()
     config = yaml.safe_load(open(args.config, "r"))
     

@@ -11,8 +11,8 @@ class NCA(nn.Module):
         self.filter_name = filter_name
         
         self.kernel = get_filter(filter_name, n_channels, device)
-        
-        input_channels = 2 * n_channels if filter_name == "sobel" else n_channels
+
+        input_channels = self.kernel.shape[0]
         
         self.conv = nn.Sequential(
             nn.Conv2d(input_channels, num_h_channels, kernel_size=1),
@@ -35,6 +35,7 @@ class NCA(nn.Module):
         update = (torch.rand(x[:, :1, :, :].shape, device=self.device) <= self.fire_rate)
         x = x + dx * update
         return x * (begin_living_cells & get_living_cells(x))
+
 
 def get_seed(img_size, n_channels, device):
     seed = torch.zeros((1, n_channels, img_size, img_size), dtype=torch.float32, device=device)
