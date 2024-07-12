@@ -7,9 +7,8 @@ import argparse
 import numpy as np
 from PIL import Image
 import wandb
-from nca import NCA, to_rgb, to_rgba, get_seed
+from nca import NCA, get_seed
 from losses import get_loss_function
-from filters import get_filter
 
 def load_image(path, size, device):
     img = Image.open(path).convert('RGBA').resize((size, size))

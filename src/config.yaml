@@ -12,5 +12,5 @@ damage: True
 damage_start: 500
 clip_value: 1.0
 model_path: ./models/nca_model.pth
-loss_function: hinge # Options: "mse", "manhattan", "hinge", "ssim", "combined_ssim_l1"
-filter_name: gaussian  # Options: "identity", "sobel", "laplacian", "gaussian"
+loss_function: mse # Options: "mse", "manhattan", "hinge", "ssim", "combined_ssim_l1"
+filter_name: sobel_identity  # Options: "sobel_identity", "laplacian", "gaussian"

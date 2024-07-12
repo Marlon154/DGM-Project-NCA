@@ -3,7 +3,7 @@ import torch.nn as nn
 from filters import get_filter, apply_filter
 
 class NCA(nn.Module):
-    def __init__(self, n_channels=16, num_h_channels=128, fire_rate=0.5, act_fun=nn.ReLU, device="cuda", filter_name="identity"):
+    def __init__(self, n_channels=16, num_h_channels=128, fire_rate=0.5, act_fun=nn.ReLU, device="cuda", filter_name="sobel_identity"):
         super(NCA, self).__init__()
         self.fire_rate = fire_rate
         self.n_channels = n_channels
@@ -11,11 +11,14 @@ class NCA(nn.Module):
         self.filter_name = filter_name
         
         self.kernel = get_filter(filter_name, n_channels, device)
-        
-        input_channels = 2 * n_channels if filter_name == "sobel" else n_channels
+                
+        if filter_name == "sobel_identity":
+            conv_in_channels = 3 * n_channels
+        else:  # for laplacian and gaussian filters
+            conv_in_channels = n_channels
         
         self.conv = nn.Sequential(
-            nn.Conv2d(input_channels, num_h_channels, kernel_size=1),
+            nn.Conv2d(conv_in_channels, num_h_channels, kernel_size=1),
             act_fun(),
             nn.Conv2d(num_h_channels, n_channels, 1, bias=False)
         ).to(device)
@@ -26,8 +29,8 @@ class NCA(nn.Module):
         self.to(device)
 
     def perceive(self, x):
-        return apply_filter(x, self.kernel)
-
+        return apply_filter(x, self.kernel, self.n_channels)
+        
     def forward(self, x):
         begin_living_cells = get_living_cells(x)
         perceived = self.perceive(x)

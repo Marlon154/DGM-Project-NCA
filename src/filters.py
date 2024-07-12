@@ -16,10 +16,8 @@ def get_filter(filter_name, n_channels, device):
     Raises:
         ValueError: If an unknown filter name is provided.
     """
-    if filter_name == "identity":
-        return identity_filter(n_channels, device)
-    elif filter_name == "sobel":
-        return sobel_filter(n_channels, device)
+    if filter_name == "sobel_identity":
+        return sobel_identity_filter(n_channels, device)
     elif filter_name == "laplacian":
         return laplacian_filter(n_channels, device)
     elif filter_name == "gaussian":
@@ -27,37 +25,22 @@ def get_filter(filter_name, n_channels, device):
     else:
         raise ValueError(f"Unknown filter name: {filter_name}")
 
-def identity_filter(n_channels, device):
+def sobel_identity_filter(n_channels, device):
     """
-    Creates an identity filter kernel.
+    Creates a combination of an sobel and identity filter kernel.
 
     Args:
         n_channels (int): Number of input channels.
         device (torch.device): Device to create the filter on.
 
     Returns:
-        torch.Tensor: Identity filter kernel.
+        torch.Tensor: Sobel Identity filter kernel.
     """
+    sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], device=device, dtype=torch.float32) / 8
+    sobel_y = sobel_x.t()
     identity = torch.tensor([0, 1, 0], device=device, dtype=torch.float32)
     identity = torch.outer(identity, identity)
-    kernel = identity.repeat((n_channels, 1, 1))[:, None, ...].to(device)
-    return kernel
-
-def sobel_filter(n_channels, device):
-    """
-    Creates Sobel filter kernels for edge detection.
-
-    Args:
-        n_channels (int): Number of input channels.
-        device (torch.device): Device to create the filter on.
-
-    Returns:
-        torch.Tensor: Sobel filter kernels (horizontal and vertical).
-    """
-    filter_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], device=device, dtype=torch.float32) / 8
-    filter_y = filter_x.t()
-    kernel = torch.stack([filter_x, filter_y], dim=0)
-    kernel = kernel.repeat(n_channels, 1, 1, 1).to(device)
+    kernel = torch.stack([identity, sobel_x, sobel_y], dim=0).repeat(n_channels, 1, 1)[:, None, ...].to(device)
     return kernel
 
 def laplacian_filter(n_channels, device):
@@ -72,7 +55,7 @@ def laplacian_filter(n_channels, device):
         torch.Tensor: Laplacian filter kernel.
     """
     laplacian = torch.tensor([[0, 1, 0], [1, -4, 1], [0, 1, 0]], device=device, dtype=torch.float32)
-    kernel = laplacian.repeat((n_channels, 1, 1))[:, None, ...].to(device)
+    kernel = laplacian.repeat(n_channels, 1, 1)[:, None, ...].to(device)
     return kernel
 
 def gaussian_filter(n_channels, device, sigma=1.0):
@@ -96,7 +79,7 @@ def gaussian_filter(n_channels, device, sigma=1.0):
     kernel = gaussian.repeat((n_channels, 1, 1))[:, None, ...].to(device)
     return kernel
 
-def apply_filter(x, kernel):
+def apply_filter(x, kernel, n_channels):
     """
     Applies the given filter kernel to the input tensor.
 
@@ -107,10 +90,4 @@ def apply_filter(x, kernel):
     Returns:
         torch.Tensor: Filtered output tensor.
     """
-    if kernel.size(0) == x.size(1) and kernel.size(1) == 2:  # Sobel filter case
-        # Apply horizontal and vertical Sobel filters
-        gx = F.conv2d(x, kernel[:, 0:1, :, :], padding=1, groups=x.size(1))
-        gy = F.conv2d(x, kernel[:, 1:2, :, :], padding=1, groups=x.size(1))
-        return torch.cat([gx, gy], dim=1)
-    else:
-        return F.conv2d(x, kernel, padding=1, groups=x.shape[1])
+    return F.conv2d(x, kernel, padding=1, groups=n_channels)
