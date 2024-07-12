@@ -11,24 +11,25 @@ from nca import NCA, to_rgb, get_seed
 def visualize_nca(model_path, config, n_steps, animation_path, interval=50):
     if torch.cuda.is_available():
         device = torch.device('cuda')
-    #elif torch.backends.mps.is_available():
-        #device = torch.device('mps')
+    # elif torch.backends.mps.is_available():
+    # device = torch.device('mps')
     else:
         device = torch.device('cpu')
     # Load the trained model
-    model = NCA(n_channels=config["n_channels"],num_h_channels=config["num_h_channels"],fire_rate=config["fire_rate"], filter_name=config["filter_name"], device=device)
+    model = NCA(device=device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
     # Initialize the seed
-    seed = get_seed(config["img_size"] + 2 * config["padding"], config["n_channels"], device)
+    img_size = config["img_size"]
+    seed = get_seed(img_size + 2 * config["padding"], config["n_channels"], device)
 
     # Create the figure and axis for the animation
     fig, ax = plt.subplots(figsize=(8, 8))  # Set figure size to be square
     ax.axis('off')
 
     # Initialize an empty image
-    img = ax.imshow(np.zeros((config["img_size"] + 2 * config["padding"], config["img_size"] + 2 * config["padding"], 3)))
+    img = ax.imshow(np.zeros((img_size + 2 * config["padding"], img_size + 2 * config["padding"], 3)))
 
     def update(frame):
         nonlocal seed
@@ -51,11 +52,11 @@ def visualize_nca(model_path, config, n_steps, animation_path, interval=50):
                                    verticalalignment='top', fontsize=20)
 
         return [img, update.step_text]
+
     # Create the animation
     anim = FuncAnimation(fig, update, frames=n_steps, interval=interval, blit=True)
 
     # Save the animation as a gif
-
     anim.save(animation_path, writer='pillow', dpi=100)
 
     plt.close(fig)
@@ -77,4 +78,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config = yaml.safe_load(open(args.config_path, "r"))
-    visualize_nca(args.model_path, config, args.n_steps, args.animation_path,args.interval)
+    visualize_nca(args.model_path, config, args.n_steps, args.animation_path, args.interval)
