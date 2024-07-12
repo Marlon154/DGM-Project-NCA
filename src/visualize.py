@@ -68,7 +68,7 @@ def visualize_nca(model_path, config, n_steps, animation_path, interval=50):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Hyperparameter Sweep")
 
-    model_path = "models/nca_model-28.pth"
+    model_path = "/home/marlon/Git/DGM-Project-NCA/models/28-_mse_sobel_identity.pth"
     config_path = "conf/config.yaml"
     animation_path = "figures/nca_model.gif"
 

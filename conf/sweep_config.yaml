@@ -41,11 +41,11 @@ parameters:
   learning_rate:
     value: 0.001
   iterations:
-    value: 2000
+    value: 150
   damage:
     value: True
   damage_start:
-    values: [100, 300, 500, 700]
+    values: [10, 30, 50, 70]
   clip_value:
     value: 1.0
   model_path:
