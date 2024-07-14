@@ -28,15 +28,16 @@ def save_best_configuration_for_sweep(user_name, project_name, sweep_id, path):
     main(best_parameters)
 
 
-def hyperparameter_tuning_all_filter_loss_combs(config, run_count, user_name, path, s_filter=None):
+def hyperparameter_tuning_all_filter_loss_combs(config, run_count, user_name, path, s_filter=None, s_loss=None):
     filter = ["gaussian", "sobel", "laplacian", "identity", "sobel_identity"]
-    filter = [s_filter] if s_filter is not None else filter
+    filter = [s_filter] if s_filter else filter
     loss = ["hinge", "manhattan", "mse", "ssim", "combined_ssim_l1"]
+    loss = [s_loss] if loss else loss
     for f in filter:
         for l in loss:
             config["parameters"]["loss_function"]["value"] = l
             config["parameters"]["filter_name"]["value"] = f
-            config["sweep_name"] = f"s_{l}_{f}"
+            config["name"] = f"large_sweep_{l}_{f}"
             config["model_path"] = f"models/28-_{l}_{f}.pth"
             project_name = f"dgm-nca"
             hyperparameter_tuning(config, run_count, user_name, path, project_name)
@@ -45,10 +46,11 @@ def hyperparameter_tuning_all_filter_loss_combs(config, run_count, user_name, pa
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Hyperparameter Sweep")
     parser.add_argument("-c", "--config", type=str, default="conf/sweep_config.yaml", help="Path to sweep config.")
-    parser.add_argument("-r", "--run_count", type=int, default=50, help="Determines how many times the sweep agent runs the train function")
+    parser.add_argument("-r", "--run_count", type=int, default=200, help="Determines how many times the sweep agent runs the train function")
     parser.add_argument("-u", "--user_name", type=str, default="mayma-lab", help="Weights and Biases username to retrieve best config")
     parser.add_argument("-p", "--best_model_path", type=str, default="models/best_configs", help="Path where best configuration for sweep is saved")
     parser.add_argument("--filter", type=str, default=None, help="Specify filter to run hyperparameter tuning for.")
+    parser.add_argument("--loss", type=str, default=None, help="Specify loss to run hyperparameter tuning for.")
     args = parser.parse_args()
 
     sweep_config = yaml.safe_load(open(args.config, "r"))
@@ -56,5 +58,6 @@ if __name__ == '__main__':
     user_name = args.user_name
     path = args.best_model_path
     filter = args.filter
+    loss = args.loss
     # hyperparameter_tuning(sweep_config,run_count, user_name, path)
-    hyperparameter_tuning_all_filter_loss_combs(sweep_config, run_count, user_name, path, filter)
+    hyperparameter_tuning_all_filter_loss_combs(sweep_config, run_count, user_name, path, filter, loss)

@@ -28,7 +28,7 @@ parameters:
     #distribution: int_uniform
     #min: 64
     #max: 256
-    values: [64, 128, 256, 512]
+    values: [32, 64, 128, 256, 512]
   fire_rate:
     #distribution: uniform
     #min: 0.1
@@ -41,11 +41,11 @@ parameters:
   learning_rate:
     value: 0.001
   iterations:
-    value: 150
+    value: 1000
   damage:
     value: True
   damage_start:
-    values: [10, 30, 50, 70]
+    values: [100, 300, 500, 700]
   clip_value:
     value: 1.0
   model_path:
