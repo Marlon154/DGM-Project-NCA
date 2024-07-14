@@ -1,11 +1,17 @@
+import os.path
+from datetime import datetime
 import torch
 from torch import nn
 from torchvision.transforms.functional import pad
 from tqdm import tqdm
+import yaml
+import argparse
 import numpy as np
 from PIL import Image
 import wandb
 from nca import NCA, to_rgb, to_rgba, get_seed
+from losses import get_loss_function
+from filters import get_filter
 
 
 def load_image(path, size, device):
@@ -23,21 +29,20 @@ def make_circle_masks(diameter, n_channels, device):
     return mask.unsqueeze(0).repeat(n_channels, 1, 1)
 
 
-def loss_fun(target_batch, cell_states):
-    cell_states_rgba = to_rgba(cell_states.permute(0, 2, 3, 1))
-    target_batch = target_batch.permute(0, 2, 3, 1)
-    cell_states_rgb = to_rgb(cell_states_rgba)
-    target_rgb = to_rgb(target_batch)
-    mse = nn.MSELoss(reduction='none')
-    loss_batch = mse(cell_states_rgb, target_rgb).mean(dim=[1, 2, 3])
-    return loss_batch, loss_batch.mean()
-
-
-def main(config):
+def main(config=None):
     wandb.init(project="dgm-nca", config=config)
+    config = wandb.config
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    assert config["min_steps"] < config["max_steps"]
 
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
+    elif torch.backends.mps.is_available():
+        device = torch.device('mps')
+    else:
+        device = torch.device('cpu')
+
+    print(f"Device: {device}")
     seed = get_seed(config["img_size"], config["n_channels"], device)
     pool = seed.expand(config["pool_size"], -1, -1, -1).clone()
 
@@ -45,21 +50,22 @@ def main(config):
     target = pad(target, config["padding"])
     batched_target = target.repeat(config["batch_size"], 1, 1, 1)
 
-    model = NCA(n_channels=config["n_channels"], device=device)
+    model = NCA(n_channels=config["n_channels"], num_h_channels=config["num_h_channels"], fire_rate=config["fire_rate"],
+                device=device, filter_name=config["filter_name"])
     optimizer = torch.optim.AdamW(model.parameters(), lr=config["learning_rate"])
 
+    # Get the loss function from the config
+    loss_fun = get_loss_function(config["loss_function"])
 
     for iteration in tqdm(range(config["iterations"])):
         batch_indices = torch.randperm(config["pool_size"], device=device)[:config["batch_size"]]
-
         x = pool[batch_indices]
-
         steps = torch.randint(config["min_steps"], config["max_steps"], (1,)).item()
         for _ in range(steps):
             x = model.forward(x)
 
-        loss_batch = ((batched_target - x[:, :4, ...])**2).mean(dim=[1, 2, 3])
-        loss = loss_batch.mean()
+        # Use the selected loss function
+        loss_batch, loss = loss_fun(batched_target, x)
 
         optimizer.zero_grad()
         loss.backward()
@@ -71,7 +77,6 @@ def main(config):
         with torch.no_grad():
             # Update pool
             pool[batch_indices] = x.detach()
-
             # Replace the highest loss sample with seed
             max_loss_idx = loss_batch.argmax()
             pool[batch_indices[max_loss_idx]] = seed
@@ -89,25 +94,19 @@ def main(config):
             "iteration": iteration,
         })
 
+    torch.save(model.state_dict(), f"models/28-_{config["loss_function"]}_{config["filter_name"]}.pth")
     wandb.finish()
-    torch.save(model.state_dict(), config["model_path"])
 
 
 if __name__ == "__main__":
-    config = {
-        "target_path": "./data/blood/blood-28.png",
-        "img_size": 28,
-        "padding": 0,
-        "min_steps": 64,
-        "max_steps": 96,
-        "n_channels": 16,
-        "batch_size": 8,
-        "pool_size": 1024,
-        "learning_rate": 0.001,
-        "iterations": 2000,
-        "damage": True,
-        "damage_start": 500,
-        "clip_value": 1.0,
-        "model_path": "./models/nca_model.pth",
-    }
+    parser = argparse.ArgumentParser(description="Train")
+    parser.add_argument("-c", "--config", type=str, default="conf/config.yaml", help="Path to config.")
+    args = parser.parse_args()
+    config = yaml.safe_load(open(args.config, "r"))
+
+    # Print the config hyperparameters
+    print("Hyperparameters:")
+    for key, value in config.items():
+        print(f"{key}: {value}")
+
     main(config)

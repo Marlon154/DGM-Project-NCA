@@ -1,0 +1,18 @@
+target_path: data/blood/blood-28.png
+img_size: 28
+padding: 0
+min_steps: 64
+max_steps: 96
+n_channels: 16
+num_h_channels: 128
+fire_rate: 0.5
+batch_size: 8
+pool_size: 1024
+learning_rate: 0.001
+iterations: 2000
+damage: True
+damage_start: 500
+clip_value: 1.0
+model_path: models/nca_model.pth
+loss_function: mse # Options: "mse", "manhattan", "hinge", "ssim", "combined_ssim_l1"
+filter_name: sobel  # Options: "identity", "sobel", "laplacian", "gaussian", "sobel_identity"
