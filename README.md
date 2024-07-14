@@ -1,6 +1,8 @@
 # DGM-Project-NCA
 For the course DGM at TU Darmstadt
 
+## Examples
+![Blood Example](figures/blood-28/28-_mse_sobel_identity.gif "Model Output")
 
 
 ## Download images
