@@ -1,4 +1,4 @@
-target_path: data/blood/blood-28.png
+target_path: data/bloodmnist/28-test-0.png
 img_size: 28
 padding: 0
 min_steps: 64

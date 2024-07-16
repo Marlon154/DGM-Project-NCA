@@ -29,15 +29,15 @@ def save_best_configuration_for_sweep(user_name, project_name, sweep_id, path):
 
 
 def hyperparameter_tuning_all_filter_loss_combs(config, run_count, user_name, path, s_filter=None, s_loss=None):
-    filter = ["gaussian", "sobel", "laplacian", "identity", "sobel_identity"]
+    filter = ["gaussian", "sobel", "laplacian", "gaussian_identity", "sobel_identity", "laplacian_identity", "identity"]
     filter = [s_filter] if s_filter else filter
     loss = ["hinge", "manhattan", "mse", "ssim", "combined_ssim_l1"]
-    loss = [s_loss] if loss else loss
+    loss = [s_loss] if s_loss else loss
     for f in filter:
         for l in loss:
             config["parameters"]["loss_function"]["value"] = l
             config["parameters"]["filter_name"]["value"] = f
-            config["name"] = f"large_sweep_{l}_{f}"
+            config["name"] = f"run_all_{l}_{f}"
             config["model_path"] = f"models/28-_{l}_{f}.pth"
             project_name = f"dgm-nca"
             hyperparameter_tuning(config, run_count, user_name, path, project_name)
