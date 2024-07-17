@@ -38,8 +38,8 @@ docker run -it dgm
 ```
 The ```config.yaml``` allows you to set various hyperparameters, including which filters and losses to use. The following are available:
 
-| Filters || [```sobel```, ```laplacian```, ```gaussian```, ```sobel_identity```] + ```_identity```|
-| Losses || ```mse```, ```manhattan```, ```hinge```, ```ssim```, ```combined_ssim_l1``` |
+Filters: [```sobel```, ```laplacian```, ```gaussian```, ```sobel_identity```] + ```_identity``` <br />
+Losses: ```mse```, ```manhattan```, ```hinge```, ```ssim```, ```combined_ssim_l1```
 
 Our investigation showed that all of our filters only work well in combination with the identity filter. Therefore, when, for example, using the Sobel filter, append the string "_identity" in the hyperparameter settings (e.g., "sobel_identity"). The resulting model will be saved in the ```models/``` folder. 
 
