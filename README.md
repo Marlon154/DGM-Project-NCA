@@ -2,15 +2,15 @@
 <br />
 <div align="center">
   <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/figures/blood-28/28-_mse_sobel_identity.gif">
-    <img src="figures/blood-28/28-_mse_sobel_identity.gif" alt="blood" height="300" width="300">
+    <img src="figures/blood-28/28-_mse_sobel_identity.gif" alt="blood" height="200" width="200">
   </a>
   &nbsp;
   <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/figures/blood-28/28-_mse_gaussian_identity.gif">
-    <img src="figures/blood-28/28-_mse_gaussian_identity.gif" alt="blood" height="300" width="300">
+    <img src="figures/blood-28/28-_mse_gaussian_identity.gif" alt="blood" height="200" width="200">
   </a>
   &nbsp;
   <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/figures/blood-28/28-_mse_laplacian_identity.gif">
-    <img src="figures/blood-28/28-_mse_laplacian_identity.gif" alt="blood" height="300" width="300">
+    <img src="figures/blood-28/28-_mse_laplacian_identity.gif" alt="blood" height="200" width="200">
   </a>
 </div>
 
@@ -52,8 +52,8 @@ To visualize the creation of an image, run the ```create_all_gifs.py``` file. Th
 Additionally, we provide code for conducting a hyperparameter sweep, which allows an investigation into which hyperparameters are most important and what values work best. We use the sweep protocol provided by [wandb](https://docs.wandb.ai/guides/sweeps). To conduct a hyperparameter sweep, run the ```hyperparameter_tuning.py``` file. To allow additional supervision on the parameters included in the sweep we provided a ```sweep_config.yaml``` file. Following, you can see an example visualization of a sweep:
 <br />
 <div align="center">
-  <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/figures/blood-28/28-_mse_sobel_identity.gif">
-    <img src="figures/blood-28/28-_mse_sobel_identity.gif" alt="blood" height="300" width="300">
+  <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/figures_readme/example_sweep.png">
+    <img src="figures_readme/example_sweep.png" alt="example_sweep" height="200" width="500">
   </a>
 </div>
 
@@ -69,3 +69,7 @@ python src/download_images.py bloodmnist --size 28 --split test --index 0
 
 Possible datasets:
 'pathmnist', 'chestmnist', 'dermamnist', 'octmnist', 'pneumoniamnist', 'retinamnist', 'breastmnist', 'bloodmnist', 'tissuemnist', 'organamnist', 'organcmnist', 'organsmnist'
+
+
+### Poster
+For the final presentation, we created a scientific poster summarizing our work, which can be seen here: [Poster](https://github.com/Marlon154/DGM-Project-NCA/blob/main/figures_readme/DGM_NCA_Poster-4.pdf)
