@@ -1,16 +1,20 @@
 <h1 align="center">Neural Cellular Automata for Medical Imaging</h1>
 <br />
 <div align="center">
+  <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/data/bloodmnist/28-test-0.png">
+    <img src="data/bloodmnist/28-test-0.png" alt="original image" height="180" width="180"/>
+  </a>
+  &nbsp;
   <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/figures/blood-28/28-_mse_sobel_identity.gif">
-    <img src="figures/blood-28/28-_mse_sobel_identity.gif" alt="blood" height="200" width="200">
+    <img src="figures/blood-28/28-_mse_sobel_identity.gif" alt="blood" height="180" width="180">
   </a>
   &nbsp;
   <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/figures/blood-28/28-_mse_gaussian_identity.gif">
-    <img src="figures/blood-28/28-_mse_gaussian_identity.gif" alt="blood" height="200" width="200">
+    <img src="figures/blood-28/28-_mse_gaussian_identity.gif" alt="blood" height="180" width="180">
   </a>
   &nbsp;
   <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/figures/blood-28/28-_mse_laplacian_identity.gif">
-    <img src="figures/blood-28/28-_mse_laplacian_identity.gif" alt="blood" height="200" width="200">
+    <img src="figures/blood-28/28-_mse_laplacian_identity.gif" alt="blood" height="180" width="180">
   </a>
 </div>
 
