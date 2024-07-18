@@ -1,40 +1,17 @@
 <h1 align="center">Neural Cellular Automata for Medical Imaging</h1>
 <br />
-<div align="center" style="display: flex; justify-content: space-around;">
-  <div>
-    <figure>
-      <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/data/bloodmnist/28-test-0.png">
-        <img alt="data/bloodmnist/28-test-0.png" src="data/bloodmnist/28-test-0.png" height="200" width="200"/>
-      </a>
-    </figure>
-  </div>
-  <div>
-    <figure>
-      <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/figures/blood-28/28-_mse_sobel_identity.gif">
-        <img src="figures/blood-28/28-_mse_sobel_identity.gif" alt="blood" height="200" width="200">
-      </a>
-    </figure>
-  </div>
-  <div>
-    <figure>
-      <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/figures/blood-28/28-_mse_gaussian_identity.gif">
-        <img src="figures/blood-28/28-_mse_gaussian_identity.gif" alt="blood" height="200" width="200">
-      </a>
-    </figure>
-  </div>
-  <div>
-    <figure>
-      <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/figures/blood-28/28-_mse_laplacian_identity.gif">
-        <img src="figures/blood-28/28-_mse_laplacian_identity.gif" alt="blood" height="200" width="200">
-      </a>
-    </figure>
-  </div>
-</div>
-<div align="center" style="display: flex; justify-content: space-around; margin-top: 10px;">
-  <figcaption style="width: 200px; text-align: center;">Original BloodMNIST Image</figcaption>
-  <figcaption style="width: 200px; text-align: center;">Model with Sobel Identity</figcaption>
-  <figcaption style="width: 200px; text-align: center;">Model with Gaussian Identity</figcaption>
-  <figcaption style="width: 200px; text-align: center;">Model with Laplacian Identity</figcaption>
+<div align="center">
+  <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/figures/blood-28/28-_mse_sobel_identity.gif">
+    <img src="figures/blood-28/28-_mse_sobel_identity.gif" alt="blood" height="200" width="200">
+  </a>
+  &nbsp;
+  <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/figures/blood-28/28-_mse_gaussian_identity.gif">
+    <img src="figures/blood-28/28-_mse_gaussian_identity.gif" alt="blood" height="200" width="200">
+  </a>
+  &nbsp;
+  <a href="https://github.com/Marlon154/DGM-Project-NCA/blob/main/figures/blood-28/28-_mse_laplacian_identity.gif">
+    <img src="figures/blood-28/28-_mse_laplacian_identity.gif" alt="blood" height="200" width="200">
+  </a>
 </div>
 
 ### General Information
